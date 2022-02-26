@@ -136,8 +136,8 @@ func TestSaveOrUpdateTsKv(t *testing.T) {
 
 		results := model.MarshalKv(hygrothermograph)
 
-		for _, v := range results {
-			tsKv := model.NewTsKv(entityId, client.GetOrSaveKeyId(v.Key), timestamp,
+		for k, v := range results {
+			tsKv := model.NewTsKv(entityId, client.GetOrSaveKeyId(k), timestamp,
 				v.BoolV, v.StringV, v.LongV, v.DoubleV, v.JsonV)
 			err := client.SaveOrUpdateTsKv(tsKv)
 			assert.Nil(t, err)
@@ -165,8 +165,8 @@ func TestSaveOrUpdateTsKv(t *testing.T) {
 
 		results := model.MarshalKv(gps)
 
-		for _, v := range results {
-			tsKv := model.NewTsKv(entityId, client.GetOrSaveKeyId(v.Key), timestamp,
+		for k, v := range results {
+			tsKv := model.NewTsKv(entityId, client.GetOrSaveKeyId(k), timestamp,
 				v.BoolV, v.StringV, v.LongV, v.DoubleV, v.JsonV)
 			err := client.SaveOrUpdateTsKv(tsKv)
 			assert.Nil(t, err)
@@ -177,5 +177,102 @@ func TestSaveOrUpdateTsKv(t *testing.T) {
 }
 
 func TestSaveOrUpdateTsKvLatest(t *testing.T) {
+	//client := NewThingsBoardRepository()
+}
 
+func TestFindTsKvLatest(t *testing.T) {
+	client := NewThingsBoardRepository()
+
+	entityId, err := uuid.Parse("ad2bfe60-7514-11ec-9a90-af0223be0666")
+	assert.Nil(t, err)
+
+	results, err := client.FindTsKvLatest(entityId)
+	assert.Nil(t, err)
+
+	for _, result := range results {
+		fmt.Printf("%+v\n", result)
+	}
+}
+
+func TestFindAllKeysByEntityIds(t *testing.T) {
+	client := NewThingsBoardRepository()
+
+	var entityIds []interface{}
+
+	entityId1, err := uuid.Parse("ad2bfe60-7514-11ec-9a90-af0223be0666")
+	assert.Nil(t, err)
+	entityIds = append(entityIds, entityId1)
+
+	entityId2, err := uuid.Parse("ad34ff10-7514-11ec-9a90-af0223be0666")
+	assert.Nil(t, err)
+	entityIds = append(entityIds, entityId2)
+
+	results, err := client.FindAllKeysByEntityIds(entityIds)
+	assert.Nil(t, err)
+	fmt.Printf("%+v\n", results)
+}
+
+func TestFindAvg(t *testing.T) {
+	client := NewThingsBoardRepository()
+
+	entityId, err := uuid.Parse("ad2bfe60-7514-11ec-9a90-af0223be0666")
+	assert.Nil(t, err)
+
+	startTime, _ := time.Parse(`2006-01-02 15:04:05`, `2021-01-01 00:00:00`)
+	endTime := time.Now()
+	results, err := client.FindAvg(entityId, 1, int64(time.Second*30), startTime.UnixNano(), endTime.UnixNano())
+	assert.Nil(t, err)
+	fmt.Printf("%+v\n", results)
+}
+
+func TestFindMax(t *testing.T) {
+	client := NewThingsBoardRepository()
+
+	entityId, err := uuid.Parse("ad2bfe60-7514-11ec-9a90-af0223be0666")
+	assert.Nil(t, err)
+
+	startTime, _ := time.Parse(`2006-01-02 15:04:05`, `2021-01-01 00:00:00`)
+	endTime := time.Now()
+	results, err := client.FindMax(entityId, 1, int64(time.Second*30), startTime.UnixNano(), endTime.UnixNano())
+	assert.Nil(t, err)
+	fmt.Printf("%+v\n", results)
+}
+
+func TestFindMin(t *testing.T) {
+	client := NewThingsBoardRepository()
+
+	entityId, err := uuid.Parse("ad2bfe60-7514-11ec-9a90-af0223be0666")
+	assert.Nil(t, err)
+
+	startTime, _ := time.Parse(`2006-01-02 15:04:05`, `2021-01-01 00:00:00`)
+	endTime := time.Now()
+	results, err := client.FindMin(entityId, 1, int64(time.Second*30), startTime.UnixNano(), endTime.UnixNano())
+	assert.Nil(t, err)
+	fmt.Printf("%+v\n", results)
+}
+
+func TestFindSum(t *testing.T) {
+	client := NewThingsBoardRepository()
+
+	entityId, err := uuid.Parse("ad2bfe60-7514-11ec-9a90-af0223be0666")
+	assert.Nil(t, err)
+
+	startTime, _ := time.Parse(`2006-01-02 15:04:05`, `2021-01-01 00:00:00`)
+	endTime := time.Now()
+	results, err := client.FindSum(entityId, 1, int64(time.Second*30), startTime.UnixNano(), endTime.UnixNano())
+	assert.Nil(t, err)
+	fmt.Printf("%+v\n", results)
+}
+
+func TestFindCount(t *testing.T) {
+	client := NewThingsBoardRepository()
+
+	entityId, err := uuid.Parse("ad2bfe60-7514-11ec-9a90-af0223be0666")
+	assert.Nil(t, err)
+
+	startTime, _ := time.Parse(`2006-01-02 15:04:05`, `2021-01-01 00:00:00`)
+	endTime := time.Now()
+	results, err := client.FindCount(entityId, 1, int64(time.Second*30), startTime.UnixNano(), endTime.UnixNano())
+	assert.Nil(t, err)
+	fmt.Printf("%+v\n", results)
 }

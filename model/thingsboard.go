@@ -51,6 +51,29 @@ func NewTsKv(entityId uuid.UUID, keyId int, timestamp int64,
 	return c
 }
 
+func NewTsKvWithKvPair(entityId uuid.UUID, keyId int, timestamp int64, pair *KvPair) *TsKv {
+	return NewTsKv(entityId, keyId, timestamp, pair.BoolV, pair.StringV, pair.LongV, pair.DoubleV, pair.JsonV)
+}
+
+func (t *TsKv) GetValue() interface{} {
+	if t.BoolV != nil {
+		return *t.BoolV
+	}
+	if t.StringV != nil {
+		return *t.StringV
+	}
+	if t.LongV != nil {
+		return *t.LongV
+	}
+	if t.DoubleV != nil {
+		return *t.DoubleV
+	}
+	if t.JsonV != nil {
+		return *t.JsonV
+	}
+	return nil
+}
+
 // TsKvDictionary 键值字典
 type TsKvDictionary struct {
 	KeyId   int    `json:"key_id" bson:"_id"`      // 编号
@@ -62,7 +85,8 @@ type TsKvDictionary struct {
 // TsKvLatest 遥测数据 最新数据
 type TsKvLatest struct {
 	EntityId  uuid.UUID `json:"entity_id" bson:"entity_id"`
-	Key       int       `json:"key" bson:"key"`
+	KeyId     int       `json:"key_id" bson:"key_id"`
+	Key       string    `json:"key" bson:"key"`
 	Timestamp int64     `json:"ts" bson:"ts"`
 
 	BoolV   *bool    `json:"bool_v,omitempty" bson:"bool_v,omitempty"`
@@ -76,7 +100,7 @@ func NewTsKvLatest(entityId uuid.UUID, keyId int, timestamp int64,
 	boolV *bool, stringV *string, longV *int64, doubleV *float64, jsonV *string) *TsKvLatest {
 	c := &TsKvLatest{
 		EntityId:  entityId,
-		Key:       keyId,
+		KeyId:     keyId,
 		Timestamp: timestamp,
 
 		BoolV:   boolV,
@@ -88,22 +112,63 @@ func NewTsKvLatest(entityId uuid.UUID, keyId int, timestamp int64,
 	return c
 }
 
-type KvMap struct {
-	Key string `json:"key" bson:"key"`
-
-	BoolV   *bool    `json:"bool_v,omitempty" bson:"bool_v,omitempty"`
-	StringV *string  `json:"str_v,omitempty" bson:"str_v,omitempty"`
-	LongV   *int64   `json:"long_v,omitempty" bson:"long_v,omitempty"`
-	DoubleV *float64 `json:"dbl_v,omitempty" bson:"dbl_v,omitempty"`
-	JsonV   *string  `json:"json_v,omitempty" bson:"json_v,omitempty"`
+func NewTsKvLatestWithKvPair(entityId uuid.UUID, keyId int, timestamp int64, pair *KvPair) *TsKvLatest {
+	return NewTsKvLatest(entityId, keyId, timestamp, pair.BoolV, pair.StringV, pair.LongV, pair.DoubleV, pair.JsonV)
 }
 
-func MarshalKv(value interface{}) []KvMap {
+func (t *TsKvLatest) GetValue() interface{} {
+	if t.BoolV != nil {
+		return *t.BoolV
+	}
+	if t.StringV != nil {
+		return *t.StringV
+	}
+	if t.LongV != nil {
+		return *t.LongV
+	}
+	if t.DoubleV != nil {
+		return *t.DoubleV
+	}
+	if t.JsonV != nil {
+		return *t.JsonV
+	}
+	return nil
+}
+
+// KvPair 键值对
+type KvPair struct {
+	BoolV   *bool    `json:"bool_v,omitempty" bson:"bool_v,omitempty"` // BOOL类型值
+	StringV *string  `json:"str_v,omitempty" bson:"str_v,omitempty"`   // String类型值
+	LongV   *int64   `json:"long_v,omitempty" bson:"long_v,omitempty"` // Long类型值
+	DoubleV *float64 `json:"dbl_v,omitempty" bson:"dbl_v,omitempty"`   // Double类型值
+	JsonV   *string  `json:"json_v,omitempty" bson:"json_v,omitempty"` // JSON类型值
+}
+type KvMap map[string]*KvPair
+
+func (t *KvPair) GetValue() interface{} {
+	if t.BoolV != nil {
+		return *t.BoolV
+	}
+	if t.StringV != nil {
+		return *t.StringV
+	}
+	if t.LongV != nil {
+		return *t.LongV
+	}
+	if t.DoubleV != nil {
+		return *t.DoubleV
+	}
+	if t.JsonV != nil {
+		return *t.JsonV
+	}
+	return nil
+}
+
+func MarshalKv(value interface{}) KvMap {
 	th := reflect.TypeOf(value)
 	vh := reflect.ValueOf(value)
 
-	var result KvMap
-	var results = make([]KvMap, 0)
+	var results = make(KvMap)
 	for i := 0; i < th.NumField(); i++ {
 		fieldType := th.Field(i)
 		fieldValue := vh.FieldByName(fieldType.Name)
@@ -112,69 +177,65 @@ func MarshalKv(value interface{}) []KvMap {
 		if idx := strings.Index(tagJson, ","); idx != -1 {
 			tagJson = tagJson[:idx]
 		}
-
-		result.Key = tagJson
-		result.BoolV = nil
-		result.StringV = nil
-		result.LongV = nil
-		result.DoubleV = nil
-		result.JsonV = nil
+		if len(tagJson) == 0 {
+			tagJson = fieldType.Name
+		}
 
 		switch fieldType.Type.Kind() {
 		case reflect.Bool:
 			v := fieldValue.Interface().(bool)
-			results = append(results, KvMap{Key: tagJson, BoolV: &v})
-			
+			results[tagJson] = &KvPair{BoolV: &v}
+
 		case reflect.String:
 			v := fieldValue.Interface().(string)
-			results = append(results, KvMap{Key: tagJson, StringV: &v})
+			results[tagJson] = &KvPair{StringV: &v}
 
 		case reflect.Int:
 			v := int64(fieldValue.Interface().(int))
-			results = append(results, KvMap{Key: tagJson, LongV: &v})
+			results[tagJson] = &KvPair{LongV: &v}
 		case reflect.Int8:
 			v := int64(fieldValue.Interface().(int8))
-			results = append(results, KvMap{Key: tagJson, LongV: &v})
+			results[tagJson] = &KvPair{LongV: &v}
 		case reflect.Int16:
 			v := int64(fieldValue.Interface().(int16))
-			results = append(results, KvMap{Key: tagJson, LongV: &v})
+			results[tagJson] = &KvPair{LongV: &v}
 		case reflect.Int32:
 			v := int64(fieldValue.Interface().(int32))
-			results = append(results, KvMap{Key: tagJson, LongV: &v})
+			results[tagJson] = &KvPair{LongV: &v}
 		case reflect.Int64:
 			v := fieldValue.Interface().(int64)
-			results = append(results, KvMap{Key: tagJson, LongV: &v})
+			results[tagJson] = &KvPair{LongV: &v}
 
 		case reflect.Uint:
 			v := int64(fieldValue.Interface().(uint))
-			results = append(results, KvMap{Key: tagJson, LongV: &v})
+			results[tagJson] = &KvPair{LongV: &v}
 		case reflect.Uint8:
 			v := int64(fieldValue.Interface().(uint8))
-			results = append(results, KvMap{Key: tagJson, LongV: &v})
+			results[tagJson] = &KvPair{LongV: &v}
 		case reflect.Uint16:
 			v := int64(fieldValue.Interface().(uint16))
-			results = append(results, KvMap{Key: tagJson, LongV: &v})
+			results[tagJson] = &KvPair{LongV: &v}
 		case reflect.Uint32:
 			v := int64(fieldValue.Interface().(uint32))
-			results = append(results, KvMap{Key: tagJson, LongV: &v})
+			results[tagJson] = &KvPair{LongV: &v}
 		case reflect.Uintptr:
 			v := int64(fieldValue.Interface().(uintptr))
-			results = append(results, KvMap{Key: tagJson, LongV: &v})
+			results[tagJson] = &KvPair{LongV: &v}
 		case reflect.Uint64:
 			v := int64(fieldValue.Interface().(uint64))
-			results = append(results, KvMap{Key: tagJson, LongV: &v})
+			results[tagJson] = &KvPair{LongV: &v}
 
 		case reflect.Float32:
 			v := float64(fieldValue.Interface().(float32))
-			results = append(results, KvMap{Key: tagJson, DoubleV: &v})
+			results[tagJson] = &KvPair{DoubleV: &v}
 		case reflect.Float64:
 			v := fieldValue.Interface().(float64)
-			results = append(results, KvMap{Key: tagJson, DoubleV: &v})
+			results[tagJson] = &KvPair{DoubleV: &v}
 
 		case reflect.Array, reflect.Map, reflect.Slice, reflect.Struct:
 			jsonByte, _ := json.Marshal(fieldValue.Interface())
 			v := string(jsonByte)
-			results = append(results, KvMap{Key: tagJson, JsonV: &v})
+			results[tagJson] = &KvPair{JsonV: &v}
 		}
 	}
 

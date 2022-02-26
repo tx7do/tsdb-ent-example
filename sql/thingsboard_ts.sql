@@ -116,27 +116,27 @@ SELECT ts_kv_latest.entity_id AS entityId
      , ts_kv_latest.json_v    AS jsonValue
      , ts_kv_latest.ts        AS ts
 FROM ts_kv_latest
-         INNER JOIN ts_kv_dictionary ON ts_kv_latest.key = ts_kv_dictionary.key_id
+         INNER JOIN ts_kv_dictionary ON ts_kv_latest.key = ts_kv_dictionary.id
 WHERE ts_kv_latest.entity_id = cast('ad2bfe60-7514-11ec-9a90-af0223be0666' AS uuid);
 
 -- 查询指定设备的所有遥测数据键名
 SELECT DISTINCT ts_kv_dictionary.key AS strKey
 FROM ts_kv_latest
-         INNER JOIN ts_kv_dictionary ON ts_kv_latest.key = ts_kv_dictionary.key_id
+         INNER JOIN ts_kv_dictionary ON ts_kv_latest.key = ts_kv_dictionary.id
 WHERE ts_kv_latest.entity_id IN ('ad2bfe60-7514-11ec-9a90-af0223be0666')
 ORDER BY ts_kv_dictionary.key;
 
 -- 查询指定租户的所有设备的遥测数据键名
 SELECT DISTINCT ts_kv_dictionary.key AS strKey
 FROM ts_kv_latest
-         INNER JOIN ts_kv_dictionary ON ts_kv_latest.key = ts_kv_dictionary.key_id
+         INNER JOIN ts_kv_dictionary ON ts_kv_latest.key = ts_kv_dictionary.id
 WHERE ts_kv_latest.entity_id IN (SELECT id FROM device WHERE tenant_id = 1 limit 100)
 ORDER BY ts_kv_dictionary.key;
 
 -- 查询指定租户的指定设备类型的遥测数据键名
 SELECT DISTINCT ts_kv_dictionary.key AS strKey
 FROM ts_kv_latest
-         INNER JOIN ts_kv_dictionary ON ts_kv_latest.key = ts_kv_dictionary.key_id
+         INNER JOIN ts_kv_dictionary ON ts_kv_latest.key = ts_kv_dictionary.id
 WHERE ts_kv_latest.entity_id IN
       (SELECT id FROM device WHERE device_profile_id = :device_profile_id AND tenant_id = :tenant_id limit 100)
 ORDER BY ts_kv_dictionary.key;
